@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from enum import Enum
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder 
 
 class DatasetDirectory(Enum):
     HEART_DISEASE = "heart+disease/processed.cleveland.data"
@@ -37,16 +38,17 @@ def penguins_data_preprocessing(data):
         "Chinstrap": 1,
         "Gentoo": 2
     })
-    categorical_cols = data.select_dtypes(include=['object']).columns.drop('species', errors='ignore')
-    data_encoded = pd.get_dummies(data, columns=categorical_cols)
+
+    le_sex = LabelEncoder()
+    data["sex"] = le_sex.fit_transform(data["sex"])
+
+    data_encoded = pd.get_dummies(data, columns=['island'])
     # Cập nhật lại data
     data.drop(data.index, inplace=True)
     for col in data_encoded.columns:
         data[col] = data_encoded[col]
     
-    data.dropna(axis=1,how='all', inplace=True)  # Loại bỏ các cột có toàn giá trị NaN
-    
-    
+    data.dropna(axis=1,how='all', inplace=True) # Loại bỏ các cột có toàn giá trị NaN
 
 
 def bank_data_preprocessing(data):
@@ -88,7 +90,7 @@ def prepare_dataset_v2(data, train_ratio, test_ratio, dataset_directory: Dataset
         X = data.drop(columns=["species"]).values
         y = data["species"].values
         feature_train, feature_test, label_train, label_test = train_test_split(
-            X, y, train_size=train_ratio, test_size=test_ratio, random_state=42
+            X, y, train_size=train_ratio, test_size=test_ratio, random_state=42, stratify=y, shuffle=True
         )
         return feature_train, label_train, feature_test, label_test
     elif dataset_directory == DatasetDirectory.BANK:
